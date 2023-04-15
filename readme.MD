@@ -17,25 +17,19 @@ yarn add mongodb-backup-toolkit
 ## Usage
 
 ```javascript
-const backup = require("mongodb-backup-toolkit");
+import MongoBackupToolkit from "mongodb-backup-toolkit";
 
 // Backup
-backup.backup("mongodb://localhost:27017/database", "backup", function (err) {
-  if (err) {
-    console.error(err);
-  } else {
-    console.log("Backup complete!");
-  }
-});
+await MongoBackupToolkit.backup(
+  "mongodb://localhost:27017/mydatabase",
+  "backup"
+);
 
 // Restore
-backup.restore("mongodb://localhost:27017/database", "backup", function (err) {
-  if (err) {
-    console.error(err);
-  } else {
-    console.log("Restore complete!");
-  }
-});
+await MongoBackupToolkit.restore(
+  "mongodb://localhost:27017/mydatabase",
+  "backup"
+);
 ```
 
 <!-- API in table -->
