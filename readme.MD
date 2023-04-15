@@ -8,7 +8,7 @@ This Node.js library that allows you to easily backup and restore MongoDB databa
 npm install mongodb-backup-toolkit
 ```
 
-or maybe yarn
+or yarn
 
 ```bash
 yarn add mongodb-backup-toolkit

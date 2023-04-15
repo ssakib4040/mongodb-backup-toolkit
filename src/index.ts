@@ -96,15 +96,4 @@ async function isDirectoryExists(path: string): Promise<boolean> {
   }
 }
 
-(async () => {
-  // Backup the database
-  // await backup(
-  //   "mongodb+srv://admin:78685848@cluster0.vivbi45.mongodb.net/sample_training",
-  //   "backup"
-  // );
-
-  // Restore the database
-  await restore("mongodb://127.0.0.1:27017/test", "backup");
-})();
-
-export { backup, restore };
+export { backup, restore, isDirectoryExists };
