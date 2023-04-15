@@ -1,17 +1,8 @@
-import mongoose from "mongoose";
+import fse from "fs-extra";
 
-/**
- * Backup the MongoDB database
- * @param dbUri The MongoDB URI
- * @param backupPath The path to backup the collections
- */
-declare function backup(dbUri: string, backupPath: string): Promise<void>;
+declare class BackupToolkit {
+  static backup(dbUri: string, backupPath: string): Promise<void>;
+  static restore(dbUri: string, backupPath: fse.PathLike): Promise<void>;
+}
 
-/**
- * Restore the MongoDB database
- * @param dbUri The MongoDB URI
- * @param backupPath The path of the backup collections
- */
-declare function restore(dbUri: string, backupPath: string): Promise<void>;
-
-export { backup, restore };
+export default BackupToolkit;
