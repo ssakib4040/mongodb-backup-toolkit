@@ -1,13 +1,14 @@
 {
   "name": "mongodb-backup-toolkit",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A Node.js package for backing up and restoring MongoDB databases",
   "main": "dist/index.js",
   "types": "src/index.d.ts",
   "scripts": {
     "build": "tsc",
     "dev": "nodemon --exec ts-node src/index.ts",
-    "test": "mocha --require ts-node/register tests/**/*.test.ts"
+    "test": "mocha --require ts-node/register tests/**/*.test.ts",
+    "prepublishOnly": "yarn run build"
   },
   "author": "Sadman Sakib",
   "license": "ISC",
