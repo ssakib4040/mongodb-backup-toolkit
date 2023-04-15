@@ -1,74 +1,110 @@
-import fs from "fs";
-import { MongoClient } from "mongodb";
+import mongoose from "mongoose";
+import Listr from "listr";
+import { promises as fs } from "fs";
+import fse from "fs-extra";
 
-let client;
+// Backup function
+async function backup(dbUri: string, backupPath: string) {
+  // create a folder named .backup if it doesn't exist
+  await fse.ensureDir(backupPath);
 
-async function backup(url: string, dbName: string, backupDir: string) {
-  client = new MongoClient(url);
+  const tasks = new Listr([
+    {
+      title: "Connecting to database",
+      task: async () => await mongoose.connect(dbUri),
+    },
+    {
+      title: "Backing up collections",
+      task: async (ctx, task) => {
+        const collections = await mongoose.connection.db.collections();
+        const collectionTasks = collections.map((collection) => ({
+          title: `Backing up ${collection.collectionName}`,
+          task: async () => {
+            const docs = await collection.find().toArray();
+            const filename = `${backupPath}/${collection.collectionName}.json`;
+            await fs.writeFile(filename, JSON.stringify(docs));
+          },
+        }));
+        return new Listr(collectionTasks, { concurrent: true });
+      },
+    },
+    {
+      title: "Backup completed",
+      task: () => console.log("Backup completed ✔"),
+    },
+  ]);
 
+  await tasks.run();
+  // console.log("Backup completed ✔");
+  mongoose.connection.close();
+}
+
+// Restore function
+async function restore(dbUri: string, backupPath: string) {
+  // if folder doesn't exist
+  if (!(await isDirectoryExists(backupPath))) {
+    console.log("Error: Backup folder doesn't exist");
+    return;
+  }
+
+  const tasks = new Listr([
+    {
+      title: "Connecting to database",
+      task: async () => await mongoose.connect(dbUri),
+    },
+    {
+      title: "Restoring collections",
+      task: async (ctx, task) => {
+        const filenames = await fs.readdir(backupPath);
+        const collectionTasks = filenames.map((filename) => ({
+          title: `Restoring ${filename}`,
+          task: async () => {
+            const collectionName = filename.slice(0, -5); // remove ".json" extension
+            const collection =
+              mongoose.connection.db.collection(collectionName);
+            const data = await fs.readFile(`${backupPath}/${filename}`, "utf8");
+            const docs = JSON.parse(data);
+            await collection.deleteMany({});
+            await collection.insertMany(docs);
+          },
+        }));
+        return new Listr(collectionTasks, { concurrent: true });
+      },
+    },
+    {
+      title: "Restore completed",
+      task: () => console.log("Restore completed"),
+    },
+  ]);
+
+  await tasks.run();
+  mongoose.connection.close();
+}
+
+async function isDirectoryExists(path: string): Promise<boolean> {
   try {
-    await client.connect();
-    console.log("Connected to database");
-
-    const db = client.db(dbName);
-    const collections = await db.listCollections().toArray();
-    const ora = await import("ora");
-    const spinner = ora.default("Backing up database").start();
-
-    for (const collection of collections) {
-      const data = await db.collection(collection.name).find().toArray();
-      const backupFile = `${backupDir}/${collection.name}.json`;
-      fs.writeFileSync(backupFile, JSON.stringify(data, null, 2));
-      spinner.text = `Backing up ${collection.name} collection`;
+    const stats = await fs.stat(path);
+    return stats.isDirectory();
+  } catch (error: any) {
+    if (error.code === "ENOENT") {
+      // The directory does not exist
+      return false;
+    } else {
+      // Some other error occurred
+      throw error;
     }
-
-    spinner.succeed("Backup complete");
-  } catch (err) {
-    console.error(err);
-  } finally {
-    await client.close();
-    console.log("Disconnected from database");
   }
 }
 
-async function restore(url: string, dbName: string, backupDir: string) {
-  client = new MongoClient(url);
+(async () => {
+  // Backup the database
+  // await backup(
+  //   "mongodb+srv://admin:78685848@cluster0.vivbi45.mongodb.net/sample_training",
+  //   "backup"
+  // );
 
-  try {
-    await client.connect();
-    console.log("Connected to database");
+  // Restore the database
+  await restore("mongodb://127.0.0.1:27017/test", "backup");
+})();
 
-    const db = client.db(dbName);
-    const backupFiles = fs.readdirSync(backupDir);
-
-    const ora = await import("ora");
-    const spinner = ora.default("Restoring database").start();
-
-    for (const backupFile of backupFiles) {
-      if (backupFile.endsWith(".json")) {
-        const collectionName = backupFile.slice(0, -5);
-        const data = JSON.parse(
-          fs.readFileSync(`${backupDir}/${backupFile}`, "utf-8")
-        );
-
-        await db.createCollection(collectionName);
-        await db.collection(collectionName).deleteMany({});
-        await db.collection(collectionName).insertMany(data);
-
-        spinner.text = `Restored ${collectionName} collection`;
-      }
-    }
-
-    spinner.succeed("Database restore complete");
-  } catch (err) {
-    console.error(err);
-  } finally {
-    await client.close();
-    console.log("Disconnected from database");
-  }
-}
-
-module.exports = {
-  backup,
-  restore,
-};
+export { backup, restore };
