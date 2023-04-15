@@ -1,8 +1,8 @@
 {
   "name": "mongodb-backup-toolkit",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A Node.js package for backing up and restoring MongoDB databases",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
     "build": "tsc",
