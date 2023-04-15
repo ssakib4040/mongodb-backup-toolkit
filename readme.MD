@@ -32,6 +32,16 @@ await MongoBackupToolkit.restore(
 );
 ```
 
+Pro Tip:
+
+If you're using Nodemon to run your application, make sure to ignore the backup folder created by the BackupToolkit. You can add the backup folder to the nodemon ignore list in your nodemon.json or nodemon.config.js file:
+
+```json
+{
+  "ignore": ["backup"]
+}
+```
+
 <!-- API in table -->
 
 ## API
